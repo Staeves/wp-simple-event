@@ -12,6 +12,7 @@ defined('ABSPATH') or die('No!');
 
 require_once plugin_dir_path(__FILE__) . "admin/menu.php";
 require_once plugin_dir_path(__FILE__) . "frontend/shortcode.php";
+require_once plugin_dir_path(__FILE__) . "frontend/cancel_registration.php";
 
 /*
  * setup the database tables:

@@ -1,4 +1,6 @@
 <?php
+require_once plugin_dir_path(__FILE__) . "../common/remove_user.php";
+
 add_action( 'admin_menu', 'sieve_admin_menu' );
 add_action( 'admin_post_sieve-add-event', 'sieve_add_event_response');
 add_action( 'admin_post_sieve-delete-event-by-id', 'sieve_delete_event_by_id_response');
@@ -250,13 +252,7 @@ function sieve_kick_user_from_event() {
 		$id = intval(sanitize_text_field( $_POST['sieve-registration_id'] ));
 		
 		// process
-		global $wpdb;
-		// delete registrations
-		$wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM " . $wpdb->prefix . "sieve_registrations 
-				WHERE id = %d;", 
-			$id));
+		remove_registration($id);
 		 
 		// TODO admin notice
 

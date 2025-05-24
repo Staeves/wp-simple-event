@@ -91,23 +91,31 @@ function sieve_register_for_event() {
 
 		// insert into db
 		global $wpdb;
-		$wpdb->query(
-			$wpdb->prepare(
-				"INSERT INTO " . $wpdb->prefix . "sieve_registrations
-				(name, email, registrationtime, eventid)
-				VALUES (%s, %s, %s, %d);",
-				$name,
-				$mail,
-				$date->format("Y-m-d H:i:s"),
-				$eventid));
-		
+		$wpdb->insert($wpdb->prefix . "sieve_registrations",
+			["name" => $name, "email" => $mail, "registrationtime" => $date->format("Y-m-d H:i:s"), "eventid" => $eventid], ["%s", "%s", "%s", "%d"]);
+		$reg_id = $wpdb->insert_id;		
+
 		echo "Anmeldung erfolgreich. Sie erhlaten in kürze eine Bestätigungs-Mail.";	
-		
+		// compute cancelation link
+		// get the data we added to ensure it is consistent
+		$reg_data = $wpdb->get_row($wpdb->prepare(
+			"
+			SELECT name, registrationtime
+			FROM " . $wpdb->prefix . "sieve_registrations
+			WHERE id = %d;
+			", $reg_id)
+		);
+		// compute hash
+		$hash_ref = hash('sha256', $reg_data->name . $reg_data->registrationtime);
+		$cancel_link = esc_url(admin_url('admin-post.php')) . '?action=sieve_cancel&sieve-id=' . $reg_id . '&sieve-key=' . $hash_ref;
+
 		// send confirmation E-Mail
 		$mail_content_spot = "Hallo {name},\n"
-			. "Du hast dich erforglreich zum Event am {date} um {time} Uhr angemeldet.";
+			. "Du hast dich erforglreich zum Event am {date} um {time} Uhr angemeldet.\n"
+			. "Wenn du nicht kommen kannst, klicke bitte auf diesen link, damit der nächste nachrutschen kann {cancel_link}";
 		$mail_content_wait = "Hallo {name},\n"
-			. "Du bist aktuell auf der Warteliste für das event am {date} um {time} Uhr.";
+			. "Du bist aktuell auf der Warteliste für das event am {date} um {time} Uhr.\n"
+			. "Wenn du nicht kommen kannst, klicke bitte auf diesen link {cancel_link}";
 		$mail_subject = "Anmeldung zum event am {date}";
 
 		// pick the right e-mail text
@@ -134,7 +142,8 @@ function sieve_register_for_event() {
 		// replace {} in mail_content with values
 		$replace_pairs = [["{name}", $name], 
 			["{date}", (new DateTimeImmutable($event_date->date))->format("j.n.y")],
-			["{time}", (new DateTimeImmutable($event_date->date))->format("G:i")]];
+			["{time}", (new DateTimeImmutable($event_date->date))->format("G:i")],
+			["{cancel_link}", $cancel_link]];
 		foreach ($replace_pairs as $rp) {
 			$mail_subject = str_replace($rp[0], $rp[1], $mail_subject);
 			$mail_content = str_replace($rp[0], $rp[1], $mail_content);
