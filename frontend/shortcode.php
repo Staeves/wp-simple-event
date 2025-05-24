@@ -101,7 +101,47 @@ function sieve_register_for_event() {
 				$date->format("Y-m-d H:i:s"),
 				$eventid));
 		
-		echo "Anmeldung erfolgreich. Sie erhlaten keine eine Bestätigungs-Mail weil ich das noch nicht implementiert habe.";	
+		echo "Anmeldung erfolgreich. Sie erhlaten in kürze eine Bestätigungs-Mail.";	
+		
+		// send confirmation E-Mail
+		$mail_content_spot = "Hallo {name},\n"
+			. "Du hast dich erforglreich zum Event am {date} um {time} Uhr angemeldet.";
+		$mail_content_wait = "Hallo {name},\n"
+			. "Du bist aktuell auf der Warteliste für das event am {date} um {time} Uhr.";
+		$mail_subject = "Anmeldung zum event am {date}";
+
+		// pick the right e-mail text
+		$num_registrations = $wpdb->get_var($wpdb->prepare(
+			"SELECT COUNT(*)
+			FROM " . $wpdb->prefix . "sieve_registrations
+			WHERE eventid = %d
+			AND registrationtime < %s;", 
+			$eventid, 
+			$date->format("Y-m-d H:i:s")));
+		
+		$event_date = $wpdb->get_row($wpdb->prepare(
+			"
+			SELECT date, maxspots
+			FROM " . $wpdb->prefix . "sieve_events
+			WHERE id = %d;", $eventid));
+		
+		if ($num_registrations < $event_date->maxspots) {
+			$mail_content = $mail_content_spot;
+		} else {
+			$mail_content = $mail_content_wait;
+		}
+		
+		// replace {} in mail_content with values
+		$replace_pairs = [["{name}", $name], 
+			["{date}", (new DateTimeImmutable($event_date->date))->format("j.n.y")],
+			["{time}", (new DateTimeImmutable($event_date->date))->format("G:i")]];
+		foreach ($replace_pairs as $rp) {
+			$mail_subject = str_replace($rp[0], $rp[1], $mail_subject);
+			$mail_content = str_replace($rp[0], $rp[1], $mail_content);
+		}
+
+		// actually send the mail
+		wp_mail( $mail, $mail_subject, $mail_content );
 	}
 	else {
 		wp_die( __( 'Invalid nonce specified', $this->plugin_name ), __( 'Error', $this->plugin_name ), array(
