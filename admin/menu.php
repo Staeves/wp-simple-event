@@ -5,6 +5,7 @@ add_action( 'admin_menu', 'sieve_admin_menu' );
 add_action( 'admin_post_sieve-add-event', 'sieve_add_event_response');
 add_action( 'admin_post_sieve-delete-event-by-id', 'sieve_delete_event_by_id_response');
 add_action( 'admin_post_sieve-kick', 'sieve_kick_user_from_event');
+add_action( 'sieve_notify_about_participants', 'sieve_send_mail_with_participants');
 
 function sieve_admin_menu() {
 	add_menu_page( 'Simple Event', 'Simple Event', 'manage_options', 'simple-event/admin.php', 'sieve_admin_page', 'dashicons-calendar');
@@ -172,7 +173,7 @@ function sieve_add_event_response() {
 	if( isset( $_POST['sieve-add_event_nonce'] ) && wp_verify_nonce( $_POST['sieve-add_event_nonce'], 'sieve-add_event') ) {
 
 		// sanitize the input
-		$date = new DateTimeImmutable(sanitize_text_field( $_POST['sieve-date'] ));
+		$date = new DateTimeImmutable(sanitize_text_field( $_POST['sieve-date'] ), wp_timezone());
 		$max_spots = intval(sanitize_text_field( $_POST['sieve-max_spots'] ));
 		$login_delta = intval(sanitize_text_field( $_POST['sieve-login_delta'] ));
 		
@@ -180,19 +181,13 @@ function sieve_add_event_response() {
 		$opendate = $date->sub(new DateInterval("P".$login_delta."D"));
 
 		global $wpdb;
-		$wpdb->query(
-			$wpdb->prepare(
-				"INSERT INTO " . $wpdb->prefix . "sieve_events 
-				(date, opendate, maxspots)
-				VALUES (%s, %s, %d);", 
-			$date->format("Y-m-d H:i:s"),
-			$opendate->format("Y-m-d H:i:s"),
-			$max_spots));
+		$wpdb->insert($wpdb->prefix."sieve_events", ["date" =>$date->format("Y-m-d H:i:s"), "opendate" => $opendate->format("Y-m-d H:i:s"), "maxspots" => $max_spots], ["%s", "%s", "%d"]);
+		$event_id = $wpdb->insert_id;
 		 
-
-
+		// add cron job to send participant list as mail before event
+		wp_schedule_single_event( $date->sub(new DateInterval("PT1H"))->getTimestamp(), "sieve_notify_about_participants", [$event_id] );
 		// TODO admin notice
-
+		
 		// redirect the user to the appropriate page
 		wp_redirect( home_url("/wp-admin/admin.php?page=simple-event%2Fadmin.php") );
 		
@@ -229,6 +224,9 @@ function sieve_delete_event_by_id_response() {
 				WHERE id = %d;", 
 			$id));
 		 
+		// unshedule the notification about the participants
+		wp_clear_scheduled_hook("sieve_notify_about_participants", [$id]);
+
 		// TODO admin notice
 
 		// redirect the user to the appropriate page
@@ -269,3 +267,53 @@ function sieve_kick_user_from_event() {
 	}
 }
 
+function sieve_send_mail_with_participants($eventid) {
+	// get event data	
+	global $wpdb;
+	$event = $wpdb->get_row(
+		"
+		SELECT date, maxspots
+		FROM " . $wpdb->prefix . "sieve_events
+		WHERE id=". $eventid. ";
+		"
+		);
+
+	$regs = $wpdb->get_results(
+		"SELECT id, name, email
+		FROM " . $wpdb->prefix . "sieve_registrations
+		WHERE eventid = " . $eventid . "
+		ORDER BY registrationtime
+		");
+	
+	// split regs into accepted and wait list
+	$registered = array_splice($regs, 0, $event->maxspots);
+	// sort the registered alphabetically
+	usort($registered, function ($a, $b) {return strcasecmp($a->name, $b->name);});
+	// build the lists as text
+	$regs_t = "";
+	foreach ($registered as $r) {
+		$regs_t .= $r->name."\t" . $r->email . "\n";
+	}
+	$waitlist_t = "";
+	$i = 0;
+	foreach ($regs as $r) {
+		$i += 1;
+		$waitlist_t .= $i. ": ". $r->name . "\t" . $r->email . "\n";
+	}
+	
+	$mail_subject = "Anmeldungen für den {date}";
+	$mail_content = "Für den {date} um {time} Uhr haben sich angemeldet:\n{registrations}Auf der Warteliste sind:\n{waitlist}";
+
+	// replace {} in mail_content with values
+	$replace_pairs = [["{date}", (new DateTimeImmutable($event->date))->format("j.n.y")],
+		["{time}", (new DateTimeImmutable($event->date))->format("G:i")],
+		["{registrations}", $regs_t],
+		["{waitlist}", $waitlist_t]];
+	foreach ($replace_pairs as $rp) {
+		$mail_subject = str_replace($rp[0], $rp[1], $mail_subject);
+		$mail_content = str_replace($rp[0], $rp[1], $mail_content);
+	}
+	
+	// send the mail
+	wp_mail( "todo@a.staeves.de", $mail_subject, $mail_content);	
+}
