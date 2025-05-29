@@ -210,7 +210,23 @@ function sieve_delete_event_by_id_response() {
 		$id = intval(sanitize_text_field( $_POST['sieve-event_id'] ));
 		
 		// process
+		// get event data	
 		global $wpdb;
+		$event = $wpdb->get_row(
+			"
+			SELECT date
+			FROM " . $wpdb->prefix . "sieve_events
+			WHERE id=". $id. ";
+			"
+			);
+
+		$regs = $wpdb->get_results(
+			"SELECT name, email
+			FROM " . $wpdb->prefix . "sieve_registrations
+			WHERE eventid = " . $id . "
+			ORDER BY registrationtime
+			");
+
 		// delete registrations
 		$wpdb->query(
 			$wpdb->prepare(
@@ -223,7 +239,25 @@ function sieve_delete_event_by_id_response() {
 				"DELETE FROM " . $wpdb->prefix . "sieve_events
 				WHERE id = %d;", 
 			$id));
-		 
+
+		// notify the participants
+		$mail_subject = "Event am {date} abgesagt";
+		$mail_content = "Hallo {name},\nLeider müssen wir das Event am {date} um {time} Uhr Absagen";
+		
+		foreach ($regs as $r) {
+			// replace {} in mail_content with values
+			$replace_pairs = [["{date}", (new DateTimeImmutable($event->date))->format("j.n.y")],
+				["{time}", (new DateTimeImmutable($event->date))->format("G:i")],
+				["{name}", $r->name]];
+			foreach ($replace_pairs as $rp) {
+				$mail_subject = str_replace($rp[0], $rp[1], $mail_subject);
+				$mail_content = str_replace($rp[0], $rp[1], $mail_content);
+			}
+	
+			// send the mail
+			wp_mail( $r->email, $mail_subject, $mail_content);
+		}
+
 		// unshedule the notification about the participants
 		wp_clear_scheduled_hook("sieve_notify_about_participants", [$id]);
 
