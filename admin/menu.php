@@ -8,7 +8,7 @@ add_action( 'admin_post_sieve-kick', 'sieve_kick_user_from_event');
 add_action( 'sieve_notify_about_participants', 'sieve_send_mail_with_participants');
 
 function sieve_admin_menu() {
-	add_menu_page( 'Simple Event', 'Simple Event', 'manage_options', 'simple-event/admin.php', 'sieve_admin_page', 'dashicons-calendar');
+	add_menu_page( 'Simple Event', 'Simple Event', 'manage_options', 'sieve', 'sieve_admin_page', 'dashicons-calendar');
 }
 
 /* 
@@ -135,11 +135,11 @@ function sieve_admin_page() {
 			</div>
 			<div>
 				<label for="sieve-max_spots"> Maximale Anzahl Teilnehmer: </label><br>
-				<input required id="sieve-max_spots" type="number" name="sieve-max_spots" value="10"/><br>
+				<input required id="sieve-max_spots" type="number" name="sieve-max_spots" value="<?php echo get_option("sieve_num_spots");?>"/><br>
 			</div>
 			<div>
 				<label for="sieve-login_delta"> Anmeldezeitraum in Tagen: </label><br>
-				<input required id="sieve-login_delta" type="number" name="sieve-login_delta" value="7"/><br>
+				<input required id="sieve-login_delta" type="number" name="sieve-login_delta" value="<?php echo get_option("sieve_open_delta");?>"/><br>
 			</div>
 			<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Hinzufügen"></p>
 		</form>
@@ -185,11 +185,11 @@ function sieve_add_event_response() {
 		$event_id = $wpdb->insert_id;
 		 
 		// add cron job to send participant list as mail before event
-		wp_schedule_single_event( $date->sub(new DateInterval("PT1H"))->getTimestamp(), "sieve_notify_about_participants", [$event_id] );
+		wp_schedule_single_event( $date->sub(new DateInterval("PT" . get_option("sieve_results_delta") . "H"))->getTimestamp(), "sieve_notify_about_participants", [$event_id] );
 		// TODO admin notice
 		
 		// redirect the user to the appropriate page
-		wp_redirect( home_url("/wp-admin/admin.php?page=simple-event%2Fadmin.php") );
+		wp_redirect( $_SERVER['HTTP_REFERER'] );
 		
 		exit;
 	}			
@@ -241,8 +241,8 @@ function sieve_delete_event_by_id_response() {
 			$id));
 
 		// notify the participants
-		$mail_subject = "Event am {date} abgesagt";
-		$mail_content = "Hallo {name},\nLeider müssen wir das Event am {date} um {time} Uhr Absagen";
+		$mail_subject = get_option("sieve_canceled_subject");
+		$mail_content = get_option("sieve_canceled_content");
 		
 		foreach ($regs as $r) {
 			// replace {} in mail_content with values
@@ -255,7 +255,7 @@ function sieve_delete_event_by_id_response() {
 			}
 	
 			// send the mail
-			wp_mail( $r->email, $mail_subject, $mail_content);
+			sieve_mail( $r->email, $mail_subject, $mail_content);
 		}
 
 		// unshedule the notification about the participants
@@ -264,7 +264,7 @@ function sieve_delete_event_by_id_response() {
 		// TODO admin notice
 
 		// redirect the user to the appropriate page
-		wp_redirect( home_url("/wp-admin/admin.php?page=simple-event%2Fadmin.php") );
+		wp_redirect( $_SERVER['HTTP_REFERER'] );
 		exit;
 	}			
 	else {
@@ -289,7 +289,7 @@ function sieve_kick_user_from_event() {
 		// TODO admin notice
 
 		// redirect the user to the appropriate page
-		wp_redirect( home_url("/wp-admin/admin.php?page=simple-event%2Fadmin.php") );
+		wp_redirect( $_SERVER['HTTP_REFERER'] );
 		exit;
 	}			
 	else {
@@ -302,6 +302,11 @@ function sieve_kick_user_from_event() {
 }
 
 function sieve_send_mail_with_participants($eventid) {
+	$recip = get_option("sieve_results_email");
+	if (! is_email($recip)) {
+		return;
+	}
+
 	// get event data	
 	global $wpdb;
 	$event = $wpdb->get_row(
@@ -335,8 +340,8 @@ function sieve_send_mail_with_participants($eventid) {
 		$waitlist_t .= $i. ": ". $r->name . "\t" . $r->email . "\n";
 	}
 	
-	$mail_subject = "Anmeldungen für den {date}";
-	$mail_content = "Für den {date} um {time} Uhr haben sich angemeldet:\n{registrations}Auf der Warteliste sind:\n{waitlist}";
+	$mail_subject = get_option("sieve_results_subject");
+	$mail_content = get_option("sieve_results_content");
 
 	// replace {} in mail_content with values
 	$replace_pairs = [["{date}", (new DateTimeImmutable($event->date))->format("j.n.y")],
@@ -349,5 +354,5 @@ function sieve_send_mail_with_participants($eventid) {
 	}
 	
 	// send the mail
-	wp_mail( "todo@a.staeves.de", $mail_subject, $mail_content);	
+	sieve_mail( $recip, $mail_subject, $mail_content);	
 }

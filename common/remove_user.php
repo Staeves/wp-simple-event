@@ -28,8 +28,8 @@ function remove_registration($id) {
 	
 	// if needed notify the lucky reg, that got a spot
 	if ($lucky_reg !== null) {
-		$mail_content = "Hallo {name},\n Für deine Event anmeldung am {date} um {time} hast du nun einen platz bekommen. \nFalls du nicht kommen kannst, sag bitte ab, indem di auf diesen Link klickst, dann bekommt der nächste den Platz\n{cancel_link}";
-		$mail_subject = "Platz für event am {date} erhalten";
+		$mail_content = get_option("sieve_lw_content");
+		$mail_subject = get_option("sieve_lw_subject");
 
 		// compute hash
 		$hash_ref = hash('sha256', $lucky_reg->name . $lucky_reg->registrationtime);
@@ -46,7 +46,7 @@ function remove_registration($id) {
 		}
 
 		// actually send the mail
-		wp_mail( $lucky_reg->email, $mail_subject, $mail_content );
+		sieve_mail( $lucky_reg->email, $mail_subject, $mail_content );
 	}
 
 }

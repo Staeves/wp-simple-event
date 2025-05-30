@@ -10,7 +10,28 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html
 */
 defined('ABSPATH') or die('No!');
 
+/* 
+ * define a wraper around wp_mail, that respects simpleEvent settings
+ */
+function sieve_mail($rec, $sub, $con) {
+	$header = array();
+	$sender_name = get_option("sieve_sender_name");
+	$reply_to = get_option("sieve_reply_to");
+	$filter_hook = function( $name ) use ($sender_name) {
+			return $sender_name;
+		};
+	if ("" != $sender_name) {
+		add_filter( 'wp_mail_from_name', $filter_hook , 100);
+		if (is_email($reply_to)) {
+			$header[] = "Reply-To: " . $sender_name . "<" . $reply_to . ">";
+		}
+	}
+	remove_filter('wp_mail_from_name', $filter_hook, 100);
+	wp_mail($rec, $sub, $con, $header);
+}
+
 require_once plugin_dir_path(__FILE__) . "admin/menu.php";
+require_once plugin_dir_path(__FILE__) . "admin/settings.php";
 require_once plugin_dir_path(__FILE__) . "frontend/shortcode.php";
 require_once plugin_dir_path(__FILE__) . "frontend/cancel_registration.php";
 

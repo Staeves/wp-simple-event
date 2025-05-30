@@ -95,7 +95,6 @@ function sieve_register_for_event() {
 			["name" => $name, "email" => $mail, "registrationtime" => $date->format("Y-m-d H:i:s"), "eventid" => $eventid], ["%s", "%s", "%s", "%d"]);
 		$reg_id = $wpdb->insert_id;		
 
-		echo "Anmeldung erfolgreich. Sie erhlaten in kürze eine Bestätigungs-Mail.";	
 		// compute cancelation link
 		// get the data we added to ensure it is consistent
 		$reg_data = $wpdb->get_row($wpdb->prepare(
@@ -110,13 +109,6 @@ function sieve_register_for_event() {
 		$cancel_link = esc_url(admin_url('admin-post.php')) . '?action=sieve_cancel&sieve-id=' . $reg_id . '&sieve-key=' . $hash_ref;
 
 		// send confirmation E-Mail
-		$mail_content_spot = "Hallo {name},\n"
-			. "Du hast dich erforglreich zum Event am {date} um {time} Uhr angemeldet.\n"
-			. "Wenn du nicht kommen kannst, klicke bitte auf diesen link, damit der nächste nachrutschen kann {cancel_link}";
-		$mail_content_wait = "Hallo {name},\n"
-			. "Du bist aktuell auf der Warteliste für das event am {date} um {time} Uhr.\n"
-			. "Wenn du nicht kommen kannst, klicke bitte auf diesen link {cancel_link}";
-		$mail_subject = "Anmeldung zum event am {date}";
 
 		// pick the right e-mail text
 		$num_registrations = $wpdb->get_var($wpdb->prepare(
@@ -134,9 +126,11 @@ function sieve_register_for_event() {
 			WHERE id = %d;", $eventid));
 		
 		if ($num_registrations < $event_date->maxspots) {
-			$mail_content = $mail_content_spot;
+			$mail_subject = get_option("sieve_confirm_spot_subject");
+			$mail_content = get_option("sieve_confirm_spot_content");
 		} else {
-			$mail_content = $mail_content_wait;
+			$mail_subject = get_option("sieve_confirm_waitlist_subject");
+			$mail_content = get_option("sieve_confirm_waitlist_content");
 		}
 		
 		// replace {} in mail_content with values
@@ -150,7 +144,9 @@ function sieve_register_for_event() {
 		}
 
 		// actually send the mail
-		wp_mail( $mail, $mail_subject, $mail_content );
+		sieve_mail( $mail, $mail_subject, $mail_content );
+
+		echo "Anmeldung erfolgreich. Sie erhlaten in kürze eine Bestätigungs-Mail.";	
 	}
 	else {
 		wp_die( __( 'Invalid nonce specified', $this->plugin_name ), __( 'Error', $this->plugin_name ), array(
