@@ -43,7 +43,7 @@ function sieve_shortcode( $atts = [], $content=null ) {
 			$res .= sieve_booking_form($event->id);
 		}
 	} else {
-		$res .= '<h2>Aktuell sind keine Anmeldungen offen</h2>';
+		$res .= '<h2>Aktuell sind keine Anmeldungen möglich</h2>';
 	}
 	// show the next event with locked registration
 	if (is_null($locked_event)) {

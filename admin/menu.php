@@ -147,7 +147,7 @@ function sieve_admin_page() {
 	let forms = document.getElementsByClassName("sieve_delete_event_form");
 	for (let form of forms) {
 		form.addEventListener("submit", function(event) {
-				var confirmMessage = "Das Event wirklich endgültig absagen?";
+				var confirmMessage = "Das Event wirklich endgültig absagen? Die Teilnehmer erhalten eine E-Mail.";
 				if (!confirm(confirmMessage)) {
 					event.preventDefault();
 				}
@@ -157,7 +157,7 @@ function sieve_admin_page() {
 	forms = document.getElementsByClassName("sieve_kick_form");
 	for (let form of forms) {
 		form.addEventListener("submit", function(event) {
-				var confirmMessage = "Diese Anmeldung wirklich endgültig absagen? Die Person bekommt keine E-Mail, weil ich das noch nicht implementiert habe";
+				var confirmMessage = "Diese Anmeldung wirklich endgültig absagen?";
 				if (!confirm(confirmMessage)) {
 					event.preventDefault();
 				}

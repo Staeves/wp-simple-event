@@ -19,7 +19,7 @@ function sieve_settings_page() {
 	<?php
 	settings_fields( 'sieve_settings' );
 	do_settings_sections('sieve_options');
-	submit_button( 'Save Settings' );
+	submit_button( 'Einstellungen Speichern' );
 	?><form></div><?php
 }
 
@@ -54,7 +54,7 @@ function sieve_settings_init() {
 	register_setting( 'sieve_settings', 'sieve_results_delta', 
 		['default'=> 1, 'sanitize_callback' => 'intval'] );
 	register_setting( 'sieve_settings', 'sieve_results_subject', 
-		['default'=> "Die Ergebnisse für das Event am {date}", 'sanitize_callback' => 'sanitize_text_field'] );
+		['default'=> "Die Anmeldungen für das Event am {date}", 'sanitize_callback' => 'sanitize_text_field'] );
 	register_setting( 'sieve_settings', 'sieve_results_content', 
 		['default'=> "Hallo,\nFür das Event am {date} um {time} Uhr haben sich angemeldet:\n{registrations}\nAuf der Warteliste sind:\n{waitlist}", 'sanitize_callback' => 'sanitize_textarea_field'] );
 
@@ -63,7 +63,7 @@ function sieve_settings_init() {
 	add_settings_section('sieve_settings_general', 'Allgemein',
 	       	'sieve_handle_setting_section', "sieve_options");
 	add_settings_field('sieve_open_delta',
-		'Standart für Tage vorher die anmeldung öffnen',
+		'Standart für den Anmeldezeitraum in Tagen',
 		"sieve_settings_field_callback",
 		"sieve_options",
 		"sieve_settings_general",
@@ -71,7 +71,7 @@ function sieve_settings_init() {
 		'type'		=> 'number']
 	);
 	add_settings_field('sieve_num_spots',
-		'Standart für Anzahl Plätze',
+		'Standart für die Anzahl Plätze',
 		"sieve_settings_field_callback",
 		"sieve_options",
 		"sieve_settings_general",
@@ -133,10 +133,10 @@ function sieve_settings_init() {
 		['label_for'	=> 'sieve_confirm_waitlist_content']
 	);
 	// Leave waitlist EMail
-	add_settings_section('sieve_settings_mail_lw', 'E-Mail beim Verlassen der Warteliste',
-	       	'sieve_handle_confirm_section', "sieve_options");
+	add_settings_section('sieve_settings_mail_lw', 'E-Mail beim Nachrücken von der Warteliste',
+	       	'sieve_handle_lw_section', "sieve_options");
 	add_settings_field('sieve_lw_subject',
-		'Betreff beim Verlassen der Warteliste',
+		'Betreff beim Nachrücken',
 		"sieve_settings_field_callback",
 		"sieve_options",
 		"sieve_settings_mail_lw",
@@ -144,7 +144,7 @@ function sieve_settings_init() {
 		'type'		=> 'text']
 	);
 	add_settings_field('sieve_lw_content',
-		'E-Mail Inhalt beim Verlassen der Warteliste',
+		'E-Mail Inhalt beim Nachrücken',
 		"sieve_settings_textarea_callback",
 		"sieve_options",
 		"sieve_settings_mail_lw",
@@ -173,13 +173,13 @@ function sieve_settings_init() {
 	add_settings_section('sieve_settings_mail_results', 'E-Mail mit den Anmeldungen',
 	       	'sieve_handle_results_section', "sieve_options");
 	add_settings_field('sieve_results_email',
-		'Email an die die Ergebnisliste gesendet werden soll',
+		'Emailadresse an die die Ergebnisliste gesendet werden soll',
 		"sieve_settings_field_callback",
 		"sieve_options",
 		"sieve_settings_mail_results",
 		['label_for'	=> 'sieve_results_email',
 		'type'		=> 'email',
-		'info' 		=> 'lehr lassen um keine E-Mail mit den Anmelungen zu versenden']
+		'info' 		=> 'lehr lassen um keine E-Mail mit den Anmelungen zu erhalten']
 	);
 	add_settings_field('sieve_results_delta',
 		'Stunden vor dem Event die Mail mit den Ergebnissen versenden',
@@ -212,8 +212,22 @@ function sieve_handle_setting_section($arg) {
 }
 
 function sieve_handle_confirm_section() {
-	?>
-	<p>Folgende codes werden automatisch ersetzt:<p>
+?>
+	<p>Simple Event versendet E-Mails als Anmeldebestätigung. Hier können sie jeweils den Betreff und den Inhalt der E-Mails einstellen, die an Teilnehmer versendet wird, wenn sie einen Fixplatz oder einen Platz auf der Warteliste erhalten haben.</p>
+	<p>Folgende Codes werden automatisch ersetzt:<p>
+<table>
+<tr><td>{name}</td><td>Der Vor und Nachname der Person, die sich angemeldet hat</td></tr>
+<tr><td>{date}</td><td>Das Datum der Veranstaltung</td></tr>
+<tr><td>{time}</td><td>Die Uhrzeit der Veranstaltung</td></tr>
+<tr><td>{cancel_link}</td><td>Der Link um die Anmeldung ab zu sagen</td></tr>
+</table>
+	<?php
+}
+
+function sieve_handle_lw_section() {
+?>
+	<p>Wenn ein Teilnehmer absagt, herhält der erste auf der Warteliste den Platz, und wird darüber per E-Mail informiert. Hier können sie den Betreff und Inhalt dieser E-Mails einstellen</p>
+	<p>Folgende Codes werden automatisch ersetzt:<p>
 <table>
 <tr><td>{name}</td><td>Der Vor und Nachname der Person, die sich angemeldet hat</td></tr>
 <tr><td>{date}</td><td>Das Datum der Veranstaltung</td></tr>
@@ -224,7 +238,8 @@ function sieve_handle_confirm_section() {
 }
 
 function sieve_handle_canceled_section() {
-	?>
+?>
+	<p>Wenn sie eine Event absagen, erhalten alle Teilnehmer die sich angemeldet hatten eine E-Mail. Hier können sie den Betreff und Inhalt dieser E-Mails einstellen</p>
 	<p>Folgende codes werden automatisch ersetzt:<p>
 <table>
 <tr><td>{name}</td><td>Der Vor und Nachname der Person, die sich angemeldet hat</td></tr>
@@ -236,11 +251,12 @@ function sieve_handle_canceled_section() {
 
 function sieve_handle_results_section() {
 	?>
-	<p>Folgende codes werden im E-Mail betreff und Inhalt automatisch ersetzt:<p>
+	<p>Simple Event kann sie kurz vor jedem Event per E-Mail über alle Anmeldungen zu dem Event informieren. Hier können sie Einstellungen für diese E-Mail machen.</p>
+	<p>Folgende codes werden im E-Mail Betreff und Inhalt automatisch ersetzt:<p>
 <table>
 <tr><td>{date}</td><td>Das Datum der Veranstaltung</td></tr>
 <tr><td>{time}</td><td>Die Uhrzeit der Veranstaltung</td></tr>
-<tr><td>{registrations}</td><td>Eine alphabetische liste aller Fixplatzanmeldungen</td></tr>
+<tr><td>{registrations}</td><td>Eine alphabetische Liste aller Fixplatzanmeldungen</td></tr>
 <tr><td>{waitlist}</td><td>Eine Liste aller Personen auf der Warteliste in der Reihnfolge ihrer Anmeldung</td></tr>
 </table>
 	<?php
