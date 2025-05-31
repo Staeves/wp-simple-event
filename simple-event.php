@@ -2,7 +2,7 @@
 /*
 Plugin Name: Simple Event
 Description: A very simple but free and open source plugin for event registration.
-Version: 0.1
+Version: 1.0
 Author: Adrian Staeves
 Plugin URI: https://github.com/Staeves/wp-simple-event
 License: GPLv3
