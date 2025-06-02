@@ -303,7 +303,7 @@ function sieve_kick_user_from_event() {
 
 function sieve_send_mail_with_participants($eventid) {
 	$recip = get_option("sieve_results_email");
-	if (! is_email($recip)) {
+	if (! str_contains($recip, "@")) {
 		return;
 	}
 

@@ -50,7 +50,7 @@ function sieve_settings_init() {
 	register_setting( 'sieve_settings', 'sieve_canceled_content', 
 		['default'=> "Hallo {name},\nleider müssen wir das Event am {date} um {time} Uhr absagen.", 'sanitize_callback' => 'sanitize_textarea_field'] );
 	register_setting( 'sieve_settings', 'sieve_results_email', 
-		['default'=> "", 'sanitize_callback' => 'sanitize_email'] );
+		['default'=> "", 'sanitize_callback' => 'sieve_sanitize_multi_email'] );
 	register_setting( 'sieve_settings', 'sieve_results_delta', 
 		['default'=> 1, 'sanitize_callback' => 'intval'] );
 	register_setting( 'sieve_settings', 'sieve_results_subject', 
@@ -63,7 +63,7 @@ function sieve_settings_init() {
 	add_settings_section('sieve_settings_general', 'Allgemein',
 	       	'sieve_handle_setting_section', "sieve_options");
 	add_settings_field('sieve_open_delta',
-		'Standart für den Anmeldezeitraum in Tagen',
+		'Standard für den Anmeldezeitraum in Tagen',
 		"sieve_settings_field_callback",
 		"sieve_options",
 		"sieve_settings_general",
@@ -71,7 +71,7 @@ function sieve_settings_init() {
 		'type'		=> 'number']
 	);
 	add_settings_field('sieve_num_spots',
-		'Standart für die Anzahl Plätze',
+		'Standard für die Anzahl Plätze',
 		"sieve_settings_field_callback",
 		"sieve_options",
 		"sieve_settings_general",
@@ -88,7 +88,7 @@ function sieve_settings_init() {
 		"sieve_settings_mail_general",
 		['label_for'	=> 'sieve_sender_name',
 		'type'		=> 'text',
-		'info' 		=> 'lehr für WP standart']
+		'info' 		=> 'lehr für WP standard']
 	);
 	add_settings_field('sieve_reply_to',
 		'Reply to',
@@ -97,7 +97,7 @@ function sieve_settings_init() {
 		"sieve_settings_mail_general",
 		['label_for'	=> 'sieve_reply_to',
 		'type'		=> 'email',
-		'info' 		=> "Hat nur einen Effekt, wenn der Anzeigename auch gesetzt ist; lehr für WP standart"]
+		'info' 		=> "Hat nur einen Effekt, wenn der Anzeigename auch gesetzt ist; lehr für WP standard"]
 	);
 	// Confirmation EMail
 	add_settings_section('sieve_settings_mail_confirm', 'Bestätigungs E-Mails',
@@ -178,8 +178,8 @@ function sieve_settings_init() {
 		"sieve_options",
 		"sieve_settings_mail_results",
 		['label_for'	=> 'sieve_results_email',
-		'type'		=> 'email',
-		'info' 		=> 'lehr lassen um keine E-Mail mit den Anmelungen zu erhalten']
+		'type'		=> 'text',
+		'info' 		=> 'lehr lassen um keine E-Mail mit den Anmelungen zu erhalten; mehrere E-Mails können mit Komma (,) getrennt werden']
 	);
 	add_settings_field('sieve_results_delta',
 		'Stunden vor dem Event die Mail mit den Ergebnissen versenden',
@@ -281,4 +281,9 @@ function sieve_settings_textarea_callback($arg) {
 	if (isset($arg["info"])) {
 		echo "<p>" . $arg["info"] . "</p>";
 	}
+}
+
+
+function sieve_sanitize_multi_email($addr_str) {
+	return implode(', ', array_map("sanitize_email", explode(",", $addr_str)));
 }
