@@ -38,7 +38,7 @@ function sieve_shortcode( $atts = [], $content=null ) {
 			if ($num_reg < $event->maxspots) {
 				$res .= "<p>Noch " . ($event->maxspots - $num_reg) . " freie Plätze</p>";
 			} else {
-				$res .= "<p>Alle " . ($event->maxspots) . " Plätze sind schon belegt. Länge der Warteliste: " . ($num_reg - $event->maxspots) . "<p>";
+				$res .= "<p>Alle " . ($event->maxspots) . " Plätze sind schon belegt und auf der Warteliste sind bisher " . ($num_reg - $event->maxspots) . " Personen<p>";
 			}
 			$res .= sieve_booking_form($event->id);
 		}
@@ -146,7 +146,7 @@ function sieve_register_for_event() {
 		// actually send the mail
 		sieve_mail( $mail, $mail_subject, $mail_content );
 
-		echo "Anmeldung erfolgreich. Sie erhlaten in kürze eine Bestätigungs-Mail.";	
+		echo "<h2>Anmeldung erfolgreich. Sie erhalten in Kürze eine Bestätigungsmail.</h2>";
 	}
 	else {
 		wp_die( __( 'Invalid nonce specified', $this->plugin_name ), __( 'Error', $this->plugin_name ), array(
