@@ -29,6 +29,8 @@ function sieve_settings_init() {
 		['default'=> 7, 'sanitize_callback' => 'intval'] );
 	register_setting( 'sieve_settings', 'sieve_num_spots', 
 		['default'=> 10, 'sanitize_callback' => 'intval'] );
+	register_setting( 'sieve_settings', 'sieve_policy', 
+		['default'=> "", 'sanitize_callback' => 'sanitize_textarea_field'] );
 	register_setting( 'sieve_settings', 'sieve_sender_name', 
 		['default'=> "", 'sanitize_callback' => 'sanitize_text_field'] );
 	register_setting( 'sieve_settings', 'sieve_reply_to', 
@@ -77,6 +79,14 @@ function sieve_settings_init() {
 		"sieve_settings_general",
 		['label_for'	=> 'sieve_num_spots',
 		'type'		=> 'number']
+	);
+	add_settings_field('sieve_policy',
+		'AGBs',
+		"sieve_settings_textarea_callback",
+		"sieve_options",
+		"sieve_settings_general",
+		['label_for'	=> 'sieve_policy',
+		'info'		=> 'Text, der zur Anmeldung akzeptiert werden muss, z.B. AGBs; lehr um keine solche Box an zu zeigen']
 	);
 	// general EMail settings
 	add_settings_section('sieve_settings_mail_general', 'E-Mail',
