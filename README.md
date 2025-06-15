@@ -23,3 +23,10 @@ Use the Short Code `[simple_event]` to add Simple Event to your frontend.
 
 Please go through the settings and test that everything works.
 
+## Updating
+As this plugin is not available in the WP-Plugin Store automatic upgrades are not possible.
+You could uninstall the old version and install the new one. This however will remove all events and registrations without notice.
+
+A better approach, is to connect to the wordpress backend using FTP and replacing the files of the plugin directly. This will update the plugin, WordPress might however still show the old version number in the plugin area. Just check for a new feature, to ensure, that the update worked. 
+
+If you know of any better way, please let me know.
