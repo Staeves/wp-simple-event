@@ -6,6 +6,7 @@ add_action( 'admin_post_sieve-add-event', 'sieve_add_event_response');
 add_action( 'admin_post_sieve-delete-event-by-id', 'sieve_delete_event_by_id_response');
 add_action( 'admin_post_sieve-kick', 'sieve_kick_user_from_event');
 add_action( 'sieve_notify_about_participants', 'sieve_send_mail_with_participants');
+add_action( 'admin_notices', 'sieve_show_admin_notice');
 
 function sieve_admin_menu() {
 	add_menu_page( 'Simple Event', 'Simple Event', 'manage_options', 'sieve', 'sieve_admin_page', 'dashicons-calendar');
@@ -70,6 +71,27 @@ function sieve_table($headers, $content, $width=array()) {
 	}
 	$res .= "</tbody></table>";
 	return $res;
+}
+
+/* 
+ * to display admin notices after form submit
+ */
+function sieve_admin_notice($message, $type) {
+	set_transient('sieve_admin_notice_' . get_current_user_id(), [
+			'message' => $message,
+			'type' => $type
+		], 10);
+}
+function sieve_show_admin_notice() {
+	$notice = get_transient( 'sieve_admin_notice_'. get_current_user_id() );
+	if ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] && $notice ) {
+		delete_transient( 'sieve_admin_notice_' . get_current_user_id());
+	}
+	if (!empty($notice) && is_array($notice)) {
+		$type = array_key_exists('type', $notice) ? $notice['type'] : 'success';
+		$message = array_key_exists('message', $notice) ? $notice['message'] : '';
+		wp_admin_notice($message, ["type" => $type, "dismissible" => true]);
+	}
 }
 
 /*
@@ -185,8 +207,18 @@ function sieve_add_event_response() {
 		$event_id = $wpdb->insert_id;
 		 
 		// add cron job to send participant list as mail before event
-		wp_schedule_single_event( $date->sub(new DateInterval("PT" . get_option("sieve_results_delta") . "H"))->getTimestamp(), "sieve_notify_about_participants", [$event_id] );
-		// TODO admin notice
+		$sheduled = wp_schedule_single_event( $date->sub(new DateInterval("PT" . get_option("sieve_results_delta") . "H"))->getTimestamp(), "sieve_notify_about_participants", [$event_id] );
+		if ($sheduled === true) {
+			sieve_admin_notice("Ereignis erfolgreich hinzugefügt", 'success');
+		} else {
+			// delete the event
+			$wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM " . $wpdb->prefix . "sieve_events
+					WHERE id = %d;", 
+				$event_id));
+			sieve_admin_notice("Fehler bein Cron event erzeugen. Das Event wurde nicht erstellt!", 'error');
+		}
 		
 		// redirect the user to the appropriate page
 		wp_redirect( $_SERVER['HTTP_REFERER'] );
