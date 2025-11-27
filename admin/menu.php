@@ -194,11 +194,7 @@ function sieve_add_event_response() {
 		exit;
 	}			
 	else {
-		wp_die( __( 'Invalid nonce specified', $this->plugin_name ), __( 'Error', $this->plugin_name ), array(
-					'response' 	=> 403,
-					'back_link' => 'admin.php?page=' . $this->plugin_name,
-
-			) );
+		wp_die('Invalid nonce specified please reload the last page and try again', 422);
 	}
 }
 
@@ -268,11 +264,7 @@ function sieve_delete_event_by_id_response() {
 		exit;
 	}			
 	else {
-		wp_die( __( 'Invalid nonce specified', $this->plugin_name ), __( 'Error', $this->plugin_name ), array(
-					'response' 	=> 403,
-					'back_link' => 'admin.php?page=' . $this->plugin_name,
-
-			) );
+		wp_die('Invalid nonce specified please reload the last page and try again', 422);
 	}
 }
 
@@ -293,11 +285,7 @@ function sieve_kick_user_from_event() {
 		exit;
 	}			
 	else {
-		wp_die( __( 'Invalid nonce specified', $this->plugin_name ), __( 'Error', $this->plugin_name ), array(
-					'response' 	=> 403,
-					'back_link' => 'admin.php?page=' . $this->plugin_name,
-
-			) );
+		wp_die('Invalid nonce specified please reload the last page and try again', 422);
 	}
 }
 

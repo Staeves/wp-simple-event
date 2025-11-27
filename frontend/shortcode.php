@@ -166,10 +166,6 @@ function sieve_register_for_event() {
 		echo "<h2>Anmeldung erfolgreich. Sie erhalten in Kürze eine Bestätigungsmail.</h2>";
 	}
 	else {
-		wp_die( __( 'Invalid nonce specified', $this->plugin_name ), __( 'Error', $this->plugin_name ), array(
-					'response' 	=> 403,
-					'back_link' => 'admin.php?page=' . $this->plugin_name,
-
-			) );
+		wp_die('Invalid nonce specified please reload the last page and try again', 422);
 	}
 }
