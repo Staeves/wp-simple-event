@@ -88,14 +88,26 @@ function sieve_booking_form($eventid) {
  */
 function sieve_register_for_event() {
 	if( isset( $_POST['sieve-register_nonce'] ) && wp_verify_nonce( $_POST['sieve-register_nonce'], 'sieve-register') ) {
+		global $wpdb;
 		// sanitize inputs
 		$name = sanitize_text_field($_POST['sieve-first_name']) . " " . sanitize_text_field($_POST['sieve-name']);
 		$mail = sanitize_email($_POST['sieve-mail']);
 		$date = new DateTimeImmutable();	// current time
 		$eventid = intval(sanitize_text_field($_POST['event_id']));
 
+		// check if name, e-mail, eventid tuple is already registered and if yes block to prevent double registrations
+		$num_this_registration = $wpdb->get_var($wpdb->prepare(
+			"SELECT COUNT(*)
+			FROM " . $wpdb->prefix . "sieve_registrations
+			WHERE name = %s AND email = %s AND eventid = %d",
+			$name, $mail, $eventid));
+		if ($num_this_registration > 0) {
+			echo "<h2>Diese Registrierung ist bereits vorhanden. Wenn Sie eine zweite Person anmelden wollen, nutzen Sie bitte den entsprechenden Namen.</h2>
+			<p>Es kann vorkommen, dass ein Endgerät die Anmeldung doppelt versendet. Wenn Sie also keine zweite Person anmelden wollten, sehen sie dies einfach als Bestätigung, dass Sie angemeldet sind.</p>";
+			return;
+		}
+
 		// insert into db
-		global $wpdb;
 		$wpdb->insert($wpdb->prefix . "sieve_registrations",
 			["name" => $name, "email" => $mail, "registrationtime" => $date->format("Y-m-d H:i:s"), "eventid" => $eventid], ["%s", "%s", "%s", "%d"]);
 		$reg_id = $wpdb->insert_id;		
