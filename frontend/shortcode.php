@@ -65,18 +65,18 @@ function sieve_booking_form($eventid) {
 		. wp_nonce_field("sieve-register", "sieve-register_nonce") 
 		. ' <input type="hidden" name="event_id" value="' . $eventid . '"/>
 		<table><tr>
-			<td><label for="sieve-first_name">Vorname:</label></td>
-			<td><input required id="sieve-first_name" type="text" name="sieve-first_name" value="" placeholder="Vorname"/></td>
+			<td><label for="sieve-first_name-' . $eventid . '">Vorname:</label></td>
+			<td><input required id="sieve-first_name-' . $eventid . '" type="text" name="sieve-first_name" value="" placeholder="Vorname"/></td>
 		</tr><tr>
-			<td><label for="sieve-name">Nachname:</label></td>
-			<td><input required id="sieve-name" type="text" name="sieve-name" value="" placeholder="Nachname"/></td>
+			<td><label for="sieve-name-' . $eventid . '">Nachname:</label></td>
+			<td><input required id="sieve-name-' . $eventid . '" type="text" name="sieve-name" value="" placeholder="Nachname"/></td>
 		</tr><tr>
-			<td><label for="sieve-mail">E-Mail:</label></td>
-			<td><input required id="sieve-mail" type="email" name="sieve-mail" value="" placeholder="E-Mail"/></td>
+			<td><label for="sieve-mail-' . $eventid . '">E-Mail:</label></td>
+			<td><input required id="sieve-mail-' . $eventid . '" type="email" name="sieve-mail" value="" placeholder="E-Mail"/></td>
 		</tr></table>
 			' . ($policy == "" ? "" : '
-				<input type="checkbox" id="sieve-policy" name="sieve-policy" required/>
-				<label for="sieve-policy">' . $policy . '</label>
+				<input type="checkbox" id="sieve-policy-' . $eventid . '" name="sieve-policy" required/>
+				<label for="sieve-policy-' . $eventid . '">' . $policy . '</label>
 			') . '
 		<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Anmelden"></p>
 		</form>';
