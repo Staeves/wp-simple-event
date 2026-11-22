@@ -73,7 +73,6 @@ function sieve_install () {
 	// shedule cron events
 	if (! wp_next_scheduled ( 'sieve_remove_old' )) {
 		wp_schedule_event( time() + 10, 'weekly', 'sieve_remove_old' ); // first trigger always 10s after activation of the plugin
-		error_log("sheduled");
 	}
 }
 
@@ -85,7 +84,6 @@ function sieve_deactivate() {
 function sieve_remove_old_func() {
 	global $wpdb;
 	// called weekly, remove all registrations and events that are more than a month old
-	error_log( 'Hello World!' );
 	$old_events = $wpdb->get_col(
 		"SELECT id 
 		FROM " . $wpdb->prefix . "sieve_events

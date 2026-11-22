@@ -83,7 +83,7 @@ function sieve_settings_init() {
 		'type'		=> 'number']
 	);
 	add_settings_field('sieve_cancel_delta',
-		'Abmeldefrist in Minuten vor dem Event',
+		'An-/Abmeldefrist in Minuten vor dem Event',
 		"sieve_settings_field_callback",
 		"sieve_options",
 		"sieve_settings_general",

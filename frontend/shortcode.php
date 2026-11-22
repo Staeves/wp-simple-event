@@ -6,14 +6,15 @@ add_action( 'admin_post_nopriv_sieve-register', 'sieve_register_for_event');
 /* define the shortcode for displaying the event registrations in the frontend */
 function sieve_shortcode( $atts = [], $content=null ) {
 	global $wpdb;
-	$open_events = $wpdb->get_results(
+	$regi_delta = get_option('sieve_cancel_delta');
+	$open_events = $wpdb->get_results( $wpdb->prepare(
 		"
 		SELECT id, date, maxspots
 		FROM " . $wpdb->prefix . "sieve_events
-		WHERE date >= now()
+		WHERE date >= DATE_ADD( now(), INTERVAL %d MINUTE)
 		AND opendate <= now()
 		ORDER BY date
-		"
+		", $regi_delta)
 		);
 	$locked_event = $wpdb->get_row(
 		"
@@ -94,6 +95,17 @@ function sieve_register_for_event() {
 		$mail = sanitize_email($_POST['sieve-mail']);
 		$date = new DateTimeImmutable();	// current time
 		$eventid = intval(sanitize_text_field($_POST['event_id']));
+
+		// check registration in time before the event
+		$event_date = $wpdb->get_var($wpdb->prepare(
+			"SELECT date
+			FROM " . $wpdb->prefix . "sieve_events
+			WHERE id = %d", $eventid));
+		$regi_delta = get_option('sieve_cancel_delta');
+		if (new DateTimeImmutable($event_date) < $date->add(new DateInterval('PT'.$regi_delta.'M'))){
+			echo "<h2>Die Anmeldefrist für dieses Event ist leider abgelaufen</h2><p>Anmeldungen sind nur bis ".$regi_delta."min vor Begin möglich.</p>";
+			return;
+		}
 
 		// check if name, e-mail, eventid tuple is already registered and if yes block to prevent double registrations
 		$num_this_registration = $wpdb->get_var($wpdb->prepare(
