@@ -9,6 +9,7 @@ License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 */
 defined('ABSPATH') or die('No!');
+add_action( 'sieve_remove_old', 'sieve_remove_old_func' );
 
 /* 
  * define a wraper around wp_mail, that respects simpleEvent settings
@@ -69,5 +70,40 @@ function sieve_install () {
 		) $charset_collate;";
 	dbDelta( $sql );
 
+	// shedule cron events
+	if (! wp_next_scheduled ( 'sieve_remove_old' )) {
+		wp_schedule_event( time() + 10, 'weekly', 'sieve_remove_old' ); // first trigger always 10s after activation of the plugin
+		error_log("sheduled");
+	}
+}
+
+register_deactivation_hook( __FILE__, 'sieve_deactivate' );
+function sieve_deactivate() {
+	wp_clear_scheduled_hook( 'sieve_remove_old' );
+}
+
+function sieve_remove_old_func() {
+	global $wpdb;
+	// called weekly, remove all registrations and events that are more than a month old
+	error_log( 'Hello World!' );
+	$old_events = $wpdb->get_col(
+		"SELECT id 
+		FROM " . $wpdb->prefix . "sieve_events
+		WHERE DATE_SUB(NOW(), INTERVAL 1 MONTH) >= date");
+	foreach ($old_events as $event) {
+		// delete user data for these old events
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM " . $wpdb->prefix . "sieve_registrations
+				WHERE eventid = %d",
+			$event));
+		// and delete the event
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM " . $wpdb->prefix . "sieve_events
+				WHERE id = %d",
+			$event));
+		
+	}
 
 }
