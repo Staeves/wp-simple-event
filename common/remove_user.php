@@ -27,7 +27,9 @@ function remove_registration($id) {
 		$id));
 	
 	// if needed notify the lucky reg, that got a spot
-	if ($lucky_reg !== null) {
+	if ($lucky_reg !== null &&
+			new DateTime("now") < (new DateTime($event->date))->sub(new DateInterval('PT'.get_option('sieve_cancel_delta').'M'))// no waitlist spots handed out, after the cancel deadline
+	) {
 		$mail_content = get_option("sieve_lw_content");
 		$mail_subject = get_option("sieve_lw_subject");
 

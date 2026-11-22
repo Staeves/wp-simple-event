@@ -29,6 +29,8 @@ function sieve_settings_init() {
 		['default'=> 7, 'sanitize_callback' => 'intval'] );
 	register_setting( 'sieve_settings', 'sieve_num_spots', 
 		['default'=> 10, 'sanitize_callback' => 'intval'] );
+	register_setting( 'sieve_settings', 'sieve_cancel_delta', 
+		['default'=> 60, 'sanitize_callback' => 'intval'] );
 	register_setting( 'sieve_settings', 'sieve_policy', 
 		['default'=> "", 'sanitize_callback' => 'sanitize_textarea_field'] );
 	register_setting( 'sieve_settings', 'sieve_sender_name', 
@@ -78,6 +80,14 @@ function sieve_settings_init() {
 		"sieve_options",
 		"sieve_settings_general",
 		['label_for'	=> 'sieve_num_spots',
+		'type'		=> 'number']
+	);
+	add_settings_field('sieve_cancel_delta',
+		'Abmeldefrist in Minuten vor dem Event',
+		"sieve_settings_field_callback",
+		"sieve_options",
+		"sieve_settings_general",
+		['label_for'	=> 'sieve_cancel_delta',
 		'type'		=> 'number']
 	);
 	add_settings_field('sieve_policy',
